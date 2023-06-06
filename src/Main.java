@@ -1,7 +1,7 @@
 public class Main {
     public static String[] monopolyTable = {"Go"};
     public static void main(String[] args) {
-        System.out.println("Hello world!");
+        printTable();
     }
 
     public static void printTable() {
