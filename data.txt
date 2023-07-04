@@ -1,0 +1,40 @@
+1;Go;Coll $200;Game;Go;200;Free;0
+2;Purple $60;Ruse Av;Free;Purple;60;Free;0
+3;Community;Chest;Game;Community;No;Free;0
+4;Purple $60;Drovska Av;Free;Purple;60;Free;0
+5;Purple $80;Dospat Av;Free;Purple;80;Free;0
+6;Rail $200;Main Rail;Free;Rail;200;Free;0
+7;Cyan $100;Peristar Av;Free;Cyan;100;Free;0
+8;Chance;?;Game;Chance;No;Free;0
+9;Cyan $100;Mesta Av;Free;Cyan;100;Free;0
+10;Cyan $120;Veles Av;Free;Cyan;120;Free;0
+11;Jail;Visiting;Game;Jail;No;Free;0
+12;IntenseRed $140;Vitosha Av;Free;IntenseRed;140;Free;0
+13;Comp $150;Electric;Free;Comp;150;Free;0
+14;IntenseRed $140;Maritsa Av;Free;IntenseRed;140;Free;0
+15;IntenseRed $160;Lom Av;Free;IntenseRed;160;Free;0
+16;Rail $200;Orel Rail;Free;Rail;200;Free;0
+17;Gray $180;Iskar Av;Free;Gray;180;Free;0
+18;Community;Chest;Game;Community;No;Free;0
+19;Gray $180;Kamchiya Av;Free;Gray;180;Free;0
+20;Gray $200;Cherna Av;Free;Gray;200;Free;0
+21;Parking;Free;Game;Parking;No;Free;0
+22;Red $220;B.Lom Av;Free;Red;220;Free;0
+23;Chance;?;Game;Chance;No;Free;0
+24;Red $220;Dunav Av;Free;Red;220;Free;0
+25;Red $240;Osam Av;Free;Red;240;Free;0
+26;Rail $200;Ctrl Rail;Free;Rail;200;Free;0
+27;Yellow $260;Yantra Av;Free;Yellow;260;Free;0
+28;Yellow $260;Mesta Av;Free;Yellow;260;Free;0
+29;Comp $150;Water;Free;Comp;150;Free;0
+30;Yellow $280;Vit Av;Free;Yellow;280;Free;0
+31;Judje;Go To Jail;Game;Judje;No;Free;0
+32;Green $300;Ticha Av;Free;Green;300;Free;0
+33;Green $300;Arda Av;Free;Green;300;Free;0
+34;Community;Chest;Game;Community;No;Free;0
+35;Green $320;Varna Av;Free;Green;320;Free;0
+36;Rail $200;Park Rail;Free;Rail;200;Free;0
+37;Chance;?;Game;Chance;No;Free;0
+38;Blue $350;Rila Av;Free;Blue;350;Free;0
+39;Blue $350;Veleka Av;Free;Blue;350;Free;0
+40;Blue $400;Pirin Av;Free;Blue;400;Free;0
