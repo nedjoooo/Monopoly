@@ -1,0 +1,16 @@
+Go to first Purple filed. If the filed is free you get it for free, if it is yours you should not do anything, if it belongs to another owner you must to pay rent.;0
+You are in hospital. You must to paid $100.;-100
+Go to first Cyan filed. If the filed is free you get it for free, if it is yours you should not do anything, if it belongs to another owner you must to pay rent.;0
+You win $200 from lottery.;200
+Go to first IntenseRed filed. If the filed is free you get it for free, if it is yours you should not do anything, if it belongs to another owner you must to pay rent.;0
+You win $100 from lottery.;100
+Go to first Gray filed. If the filed is free you get it for free, if it is yours you should not do anything, if it belongs to another owner you must to pay rent.;0
+You will brake. Ъou don't have to do anything.;0
+Go to first Red filed. If the filed is free you get it for free, if it is yours you should not do anything, if it belongs to another owner you must to pay rent.;0
+You in the bank and have to pay $160 tax.;-160
+Go to first Yellow filed. If the filed is free you get it for free, if it is yours you should not do anything, if it belongs to another owner you must to pay rent.;0
+You have to pay $250 insurance.;-250
+Go to first Green filed. If the filed is free you get it for free, if it is yours you should not do anything, if it belongs to another owner you must to pay rent.;0
+You get $150 from tax benefits.;150
+Go to first Blue filed. If the filed is free you get it for free, if it is yours you should not do anything, if it belongs to another owner you must to pay rent.;0
+You get $50 from the society of hoteliers.;50

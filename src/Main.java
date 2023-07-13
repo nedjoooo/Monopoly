@@ -8,6 +8,7 @@ public class Main {
     public static Scanner scanner;
     public static Map<Integer, List<String>> gameTable;
     public static Map<Integer, List<String>> players;
+    public static int playersCount;
     public static Map<String, List<String>> avenueProperties;
     public static Map<String, List<String>> railroadProperties;
     public static Map<String, List<String>> companyProperties;
@@ -21,9 +22,11 @@ public class Main {
     public static String ANSI_INTENSE_RED = "\u001B[41m";
     public static String ANSI_INTENSE_GREEN = "\u001B[42m";
     public static String ANSI_INTENSE_GRAY = "\u001B[47m";
+    public static List<String> chancesCarts;
 
     public static void main(String[] args) {
         fillGameTable();
+        fillChancesCarts();
         printTable();
         scanner = new Scanner(System.in);
         initializePlayers();
@@ -31,13 +34,17 @@ public class Main {
     }
 
     public static void runGame() {
-        while (true) {
+        while (playersCount > 2) {
             for (Map.Entry<Integer, List<String>> player : players.entrySet()) {
                 if(player.getValue().get(3).equals("active")) {
-
-//                    List<String> currentPlayer = player.getValue();
-                    playerTurn(player);
-                    printTable();
+                    String playerInJail = player.getValue().get(15);
+                    if(playerInJail.equals("In jail")) {
+                        player.getValue().set(15, "Not in jail");
+                        System.out.println(getPlayerName(player) + " is in jail. You wait next turn.");
+                    } else {
+                        playerTurn(player);
+                        printTable();
+                    }
                 }
             }
         }
@@ -73,7 +80,7 @@ public class Main {
                         int inputChoice = getInputChoice(neighborhoodProperties);
                         String propertyName = neighborhoodProperties.get(inputChoice - 1);
                         List<String> avenueProperty = avenueProperties.get(propertyName);
-                        int levelProperty = Integer.parseInt(avenueProperty.get(9));
+                        int levelProperty = Integer.parseInt(avenueProperty.get(10));
                         if (levelProperty < 5) {
                             levelProperty++;
                         } else {
@@ -120,9 +127,28 @@ public class Main {
     }
 
     public static void playerTurn(Map.Entry<Integer, List<String>> player) {
-        printTurnMessage(player.getValue().get(0));
+        printTurnMessage(getPlayerName(player));
         playerRollDices(player);
         dealNewPosition(player);
+        printPlayersInfo();
+    }
+
+    public static void printPlayersInfo() {
+        int nameIndex = 0;
+        int moneyIndex = 1;
+        System.out.print("-".repeat(65));
+        System.out.println();
+        printPlayerInfo(nameIndex);
+        printPlayerInfo(moneyIndex);
+        System.out.print("-".repeat(65));
+    }
+
+    public static void printPlayerInfo(int rowIndex) {
+        System.out.print("|");
+        for (Map.Entry<Integer, List<String>> player : players.entrySet()) {
+            System.out.printf("%-15s|", player.getValue().get(rowIndex));
+        }
+        System.out.println();
     }
 
     public static void dealNewPosition(Map.Entry<Integer, List<String>> player) {
@@ -131,16 +157,306 @@ public class Main {
         String positionStatus = tablePosition.get(3);
 
         if(positionStatus.equals("Game")) {
-
+            gamePositionDeal(player, tablePosition);
         } else if (positionStatus.equals("Free")) {
             String propertyName = tablePosition.get(2);
             String propertyPrice = tablePosition.get(5);
+            printPlayer(player);
             System.out.println("Do you want to buy " + propertyName + " for $" + propertyPrice + ".");
-            String playerChoice = "";
             if(getAnswerInput()) {
                 getFreePositionDeal(player, tablePosition);
-            };
+            }
+        } else {
+            Map.Entry<Integer, List<String>> playerInThePosition = getPlayerInPosition(positionStatus);
+            if (!getPlayerName(player).equals(getPlayerName(playerInThePosition))) {
+                String propertyName = tablePosition.get(2);
+                String propertyType = tablePosition.get(4);
+                if (propertyType.equals("Rail")) {
+                    Map.Entry<String, List<String>> property = getRailProperty(propertyType, propertyName);
+                    getRailRentDeal(player, playerInThePosition);
+                } else if (propertyType.equals("Comp")) {
+                    Map.Entry<String, List<String>> property = getCompProperty(propertyType, propertyName);
+                    getCompRentDeal(player, playerInThePosition);
+                } else {
+                    Map.Entry<String, List<String>> property = getAvenueProperty(propertyName);
+                    getRentDeal(player, playerInThePosition, property);
+                }
+            } else {
+                System.out.println("This field is yours!");
+            }
+
         }
+    }
+
+    public static void getCompRentDeal(Map.Entry<Integer, List<String>> playerTenant,
+                                       Map.Entry<Integer, List<String>> playerLandlord) {
+        int playerTenantMoney = getPlayerMoney(playerTenant);
+        int rentalPrice = getCompRentalPrice(playerTenant, playerLandlord);
+        if(playerTenantMoney < rentalPrice) {
+            setPlayerInactive(playerTenant);
+        } else {
+            getDeal(playerTenant, playerLandlord, playerTenantMoney, rentalPrice);
+        }
+    }
+
+    public static void getRailRentDeal(Map.Entry<Integer, List<String>> playerTenant,
+                                       Map.Entry<Integer, List<String>> playerLandlord) {
+        String[] playerLandlordRailInfo = playerLandlord.getValue().get(5).split(":");
+        int playerLandlordRailCount = Integer.parseInt(playerLandlordRailInfo[1]);
+
+        int playerTenantMoney = getPlayerMoney(playerTenant);
+        int rentalPrice = getRailRentalPrice(playerLandlordRailCount);
+        if(playerTenantMoney < rentalPrice) {
+            setPlayerInactive(playerTenant);
+        } else {
+            getDeal(playerTenant, playerLandlord, playerTenantMoney, rentalPrice);
+        }
+    }
+
+    private static void getDeal(Map.Entry<Integer, List<String>> playerTenant, Map.Entry<Integer, List<String>> playerLandlord, int playerTenantMoney, int rentalPrice) {
+        playerTenantMoney -= rentalPrice;
+        setPlayerMoney(playerTenant, playerTenantMoney);
+        int playerLandLordMoney = getPlayerMoney(playerLandlord);
+        playerLandLordMoney += rentalPrice;
+        setPlayerMoney(playerLandlord, playerLandLordMoney);
+        rentPaidMessage(playerTenant, playerLandlord, rentalPrice);
+    }
+
+    private static void rentPaidMessage(Map.Entry<Integer, List<String>> playerTenant, Map.Entry<Integer, List<String>> playerLandlord, int rentalPrice) {
+        System.out.println(getPlayerName(playerTenant) + " paid $" + rentalPrice + " rent to " + getPlayerName(playerLandlord));
+    }
+
+    public static void getRentDeal(Map.Entry<Integer, List<String>> playerTenant,
+                                   Map.Entry<Integer, List<String>> playerLandlord,
+                                   Map.Entry<String, List<String>> property) {
+        int playerTenantMoney = getPlayerMoney(playerTenant);
+        int rentalPrice = getPropertyRentalPrice(property.getValue());
+        if(playerTenantMoney < rentalPrice) {
+            setPlayerInactive(playerTenant);
+        } else {
+            getDeal(playerTenant, playerLandlord, playerTenantMoney, rentalPrice);
+        }
+    }
+
+
+    public static int getCompRentalPrice(Map.Entry<Integer, List<String>> playerTenant,
+                                         Map.Entry<Integer, List<String>> playerLandlord) {
+        int rentPrice;
+        int resultOfLastDices = Integer.parseInt(playerTenant.getValue().get(14));
+        String[] playerLandlordCompInfo = playerLandlord.getValue().get(4).split(":");
+        int playerLandlordCompCount = Integer.parseInt(playerLandlordCompInfo[1]);
+
+        if(playerLandlordCompCount == 1) {
+            rentPrice = resultOfLastDices * 4;
+        } else {
+            rentPrice = resultOfLastDices * 10;
+        }
+
+        return rentPrice;
+    }
+
+    public static int getRailRentalPrice (int railPropertiesCount) {
+        switch (railPropertiesCount) {
+            case 1 -> {
+                return 25;
+            }
+            case 2 -> {
+                return 50;
+            }
+            case 3 -> {
+                return 100;
+            }
+            case 4 -> {
+                return 200;
+            }
+        }
+
+        return 0;
+    }
+
+    public static Map.Entry<String, List<String>> getRailProperty(String propertyType, String propertyName) {
+        Map.Entry<String, List<String>> property = null;
+        for (Map.Entry<String, List<String>> railProperty : railroadProperties.entrySet()) {
+            if(railProperty.getValue().get(0).equals(propertyName)) {
+                property = railProperty;
+            }
+        }
+
+        return property;
+    }
+
+    public static Map.Entry<String, List<String>> getCompProperty(String propertyType, String propertyName) {
+        Map.Entry<String, List<String>> property = null;
+        for (Map.Entry<String, List<String>> compProperty : companyProperties.entrySet()) {
+            if(compProperty.getValue().get(0).equals(propertyName)) {
+                property = compProperty;
+            }
+        }
+
+        return property;
+    }
+
+    public static void gamePositionDeal (Map.Entry<Integer, List<String>> player, List<String> tablePosition) {
+        String tableGamePosition = tablePosition.get(4);
+        switch (tableGamePosition) {
+            case "Chance" -> chancePositionDeal(player);
+            case "Jail" -> playerInJail(player);
+            case "Judje" -> goToJail(player);
+            case "Parking" -> goToParking(player);
+        }
+    }
+
+    public static void goToParking(Map.Entry<Integer, List<String>> player) {
+        System.out.println(getPlayerName(player) + "You went to parking.");
+    }
+
+    public static void goToJail(Map.Entry<Integer, List<String>> player) {
+        int jailPosition = 11;
+        int playerPosition = getPlayerPosition(player);
+        setGameTable(player, playerPosition, jailPosition);
+        System.out.println();
+    }
+
+    public static int getPlayerPosition(Map.Entry<Integer, List<String>> player) {
+        return Integer.parseInt(player.getValue().get(2));
+    }
+
+    public static void playerInJail(Map.Entry<Integer, List<String>> player) {
+        player.getValue().set(15, "In jail");
+        System.out.println(getPlayerName(player) + ", you went to jail.");
+    }
+
+    private static String getPlayerName(Map.Entry<Integer, List<String>> player) {
+        return player.getValue().get(0);
+    }
+
+    public static void chancePositionDeal(Map.Entry<Integer, List<String>> player) {
+        int randomChanceCart = getCard();
+        System.out.println("You hit a chance field. " + chancesCarts.get(randomChanceCart));
+        switch (randomChanceCart) {
+            case 0 -> goToFirstColoredField(player, "Purple");
+            case 1, 3, 5, 7, 9, 11, 13, 15 -> goChanceDeal(player, randomChanceCart);
+            case 2 -> goToFirstColoredField(player, "Cyan");
+            case 4 -> goToFirstColoredField(player, "IntenseRed");
+            case 6 -> goToFirstColoredField(player, "Gray");
+            case 8 -> goToFirstColoredField(player, "Red");
+            case 10 -> goToFirstColoredField(player, "Yellow");
+            case 12 -> goToFirstColoredField(player, "Green");
+            case 14 -> goToFirstColoredField(player, "Blue");
+            default -> throw new IllegalStateException("Unexpected value: " + randomChanceCart);
+        }
+    }
+
+    public static void goChanceDeal(Map.Entry<Integer, List<String>> player, int chanceCardNumber) {
+        String[] chance = chancesCarts.get(chanceCardNumber).split(";");
+        int chanceMoney = Integer.parseInt(chance[1]);
+        int playerMoney = Integer.parseInt(player.getValue().get(1));
+        playerMoney += chanceMoney;
+        if (playerMoney < 0) {
+            System.out.println("You are bankrupt!");
+            setPlayerInactive(player);
+        }
+        setPlayerMoney(player, playerMoney);
+    }
+
+    public static void goToFirstColoredField(Map.Entry<Integer, List<String>> player, String fieldColor) {
+        for (Map.Entry<Integer, List<String>> field : gameTable.entrySet()) {
+            if (field.getValue().get(4).equals(fieldColor)) {
+                int playerPosition = Integer.parseInt(player.getValue().get(2));
+                int playerNewPosition = field.getKey();
+                player.getValue().set(2, String.valueOf(playerNewPosition));
+                setGameTable(player, playerPosition, playerNewPosition);
+                String fieldOwner = field.getValue().get(3);
+                String playerName = player.getValue().get(0).substring(0, 4);
+                if (fieldOwner.equals("Free")) {
+                    int propertyPrice = 0;
+                    int playerBankAmount = Integer.parseInt(player.getValue().get(1));
+                    dealProperty(player, field.getValue(), propertyPrice, playerBankAmount);
+                    return;
+                } else if (fieldOwner.equals(playerName)) {
+                    return;
+                } else {
+                    Map.Entry<Integer, List<String>> playerLandlord = getFieldOwner(fieldOwner);
+                    Map.Entry<String, List<String>> property = getAvenueProperty(field.getValue().get(2));
+                    assert property != null;
+                    getRentDeal(player, playerLandlord, property);
+                    return;
+                }
+            }
+        }
+    }
+
+    public static Map.Entry<Integer, List<String>> getFieldOwner (String fieldOwnerName) {
+        Map.Entry<Integer, List<String>> fieldOwner = null;
+        for (Map.Entry<Integer, List<String>> player : players.entrySet()) {
+            String playerName = player.getValue().get(0).substring(0, 4);
+            if(playerName.equals(fieldOwnerName)) {
+                fieldOwner = player;
+            }
+        }
+
+        return fieldOwner;
+    }
+
+    public static int getCard() {
+        Random random = new Random();
+        int maximumCartNumber = 16;
+        int minimumCartNumber = 1;
+        int cartNumber = random.nextInt((maximumCartNumber - minimumCartNumber) + 1) + minimumCartNumber;
+
+        return cartNumber - 1;
+    }
+
+    public static Map.Entry<String, List<String>> getAvenueProperty (String propertyName) {
+        for (Map.Entry<String, List<String>> property : avenueProperties.entrySet()) {
+            if(property.getKey().equals(propertyName)) {
+                return property;
+            }
+        }
+
+        return null;
+    }
+
+
+    public static void setPlayerMoney(Map.Entry<Integer, List<String>> player, int money) {
+        player.getValue().set(1, String.valueOf(money));
+    }
+
+    public static void setPlayerInactive(Map.Entry<Integer, List<String>> player) {
+        System.out.println("You are bankrupt!");
+        player.getValue().set(3, "Inactive");
+        playersCount--;
+    }
+
+    public static int getPropertyRentalPrice(List<String> property) {
+        int propertyLevel = getPropertyLevel(property);
+        switch (propertyLevel) {
+            case 1 : return getLevelRentalPrice(property, 5);
+            case 2 : return getLevelRentalPrice(property, 6);
+            case 3 : return getLevelRentalPrice(property, 7);
+            case 4 : return getLevelRentalPrice(property, 8);
+            case 5 : return getLevelRentalPrice(property, 9);
+            default: return Integer.parseInt(property.get(3));
+        }
+    }
+
+    public static int getLevelRentalPrice(List<String> property, int position) {
+        String[] levelPriceDescription = property.get(position).split(":");
+        return Integer.parseInt(levelPriceDescription[1]);
+    }
+
+    public static int getPropertyLevel(List<String> property) {
+        return Integer.parseInt(property.get(10));
+    }
+
+    public static Map.Entry<Integer, List<String>> getPlayerInPosition(String playerName) {
+        for (Map.Entry<Integer, List<String>> player : players.entrySet()) {
+            if(getPlayerName(player).equals(playerName)) {
+                return player;
+            }
+        }
+
+        return null;
     }
 
     private static boolean getAnswerInput() {
@@ -158,9 +474,17 @@ public class Main {
         }
     }
 
+    public static void printPlayer(Map.Entry<Integer, List<String>> player) {
+        System.out.println("Your account sum: " + getPlayerMoney(player));
+    }
+
+    public static int getPlayerMoney(Map.Entry<Integer, List<String>> player) {
+        return Integer.parseInt(player.getValue().get(1));
+    }
+
     public static void getFreePositionDeal(Map.Entry<Integer, List<String>> player, List<String> tablePosition) {
         int propertyPrice = Integer.parseInt(tablePosition.get(5));
-        int playerBankAmount = Integer.parseInt(player.getValue().get(1));
+        int playerBankAmount = getPlayerMoney(player);
         if(playerBankAmount < propertyPrice) {
             System.out.println("You do not have enough money for buy this property!");
         } else {
@@ -171,7 +495,7 @@ public class Main {
     private static void dealProperty(Map.Entry<Integer, List<String>> player, List<String> tablePosition, int propertyPrice, int playerBankAmount) {
         playerBankAmount -= propertyPrice;
         player.getValue().set(1, String.valueOf(playerBankAmount));
-        String playerName = player.getValue().get(0);
+        String playerName = getPlayerName(player);
 
         if(playerName.length() > 5) {
             playerName = playerName.substring(0, 4);
@@ -184,7 +508,8 @@ public class Main {
         String color = playerColorInfo[0];
         int coloredPropertyCount = Integer.parseInt(playerColorInfo[1]);
         coloredPropertyCount++;
-        String revisedColoredInfo = color + ":" + String.valueOf(coloredPropertyCount);
+        String revisedColoredInfo = color + ":" + coloredPropertyCount;
+        player.getValue().set(playerColorPosition, revisedColoredInfo);
     }
 
     public static int getPlayerColorIndex(String colorField) {
@@ -212,14 +537,22 @@ public class Main {
         boolean isFirstTurn = true;
 
         int resultOfDices = dices[0] + dices[1];
+        setPlayerLastDicesResult(player, resultOfDices);
         int playerPosition = Integer.parseInt(player.getValue().get(2));
         int playerNewPosition = playerPosition + resultOfDices;
         if(playerNewPosition > 40) {
             playerNewPosition -= 40;
+            int playerMoney = getPlayerMoney(player);
+            playerMoney += 200;
+            setPlayerMoney(player, playerMoney);
+            System.out.println(getPlayerName(player) + ", you are collect $200.");
         }
         player.getValue().set(2, String.valueOf(playerNewPosition));
         setGameTable(player, playerPosition, playerNewPosition);
-//        printTable();
+    }
+
+    public static void setPlayerLastDicesResult(Map.Entry<Integer, List<String>> player, int resultOfDices) {
+        player.getValue().set(14, String.valueOf(resultOfDices));
     }
 
     private static void setGameTable(Map.Entry<Integer, List<String>> player, int playerPosition, int playerNewPosition) {
@@ -245,7 +578,7 @@ public class Main {
             gameTable.get(playerNewPosition).set(6, currentUserName);
         } else {
             StringBuilder newFieldRevizeUsages = new StringBuilder();
-            newFieldRevizeUsages.append(gameTable.get(playerNewPosition).get(3)).append(" ").append(currentUserName);
+            newFieldRevizeUsages.append(gameTable.get(playerNewPosition).get(6)).append(" ").append(currentUserName);
             gameTable.get(playerNewPosition).set(6, newFieldRevizeUsages.toString());
         }
     }
@@ -273,12 +606,12 @@ public class Main {
 
     public static void initializePlayers() {
         while (true) {
-            int countOfPlayers = getPlayersCount();
+            playersCount = getPlayersCount();
 
-            if(countOfPlayers < 2 || countOfPlayers > 4) {
+            if(playersCount < 2 || playersCount > 4) {
                 System.out.print("The entered number does not in the range! Plase enter number of players again [2 - 4]: ");
             } else {
-                createPlayers(countOfPlayers);
+                createPlayers(playersCount);
                 break;
             }
         }
@@ -336,6 +669,8 @@ public class Main {
         playerInfo.add("Yellow:0");
         playerInfo.add("Green:0");
         playerInfo.add("Blue:0");
+        playerInfo.add("0");
+        playerInfo.add("Not in jail");
 
         return playerInfo;
     }
@@ -463,7 +798,20 @@ public class Main {
         }
     }
 
-
+    public static void fillChancesCarts() {
+        chancesCarts = new ArrayList<>();
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader("chance-carts.txt"))){
+            int chanceCartsCount = 16;
+            for (int i = 0; i < chanceCartsCount; i++) {
+                String chanceCart = bufferedReader.readLine();
+                chancesCarts.add(i, chanceCart);
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private static void enterProperty(List<String> fieldInfo) {
         String propertyTablePosition = fieldInfo.get(0);
