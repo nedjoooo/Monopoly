@@ -307,7 +307,7 @@ public class Main {
     }
 
     public static void goToParking(Map.Entry<Integer, List<String>> player) {
-        System.out.println(getPlayerName(player) + "You went to parking.");
+        System.out.println(getPlayerName(player) + ", you went to parking.");
     }
 
     public static void goToJail(Map.Entry<Integer, List<String>> player) {
